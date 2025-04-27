@@ -1,0 +1,140 @@
+{
+	"info": {
+		"_postman_id": "ad73fc62-66b3-4b36-b435-4de4439c5d04",
+		"name": "otus-hl-course",
+		"description": "Just RUN collection!",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "11220359"
+	},
+	"item": [
+		{
+			"name": "POST /user/register",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Генерация случайных данных для нового юзера",
+							"const randomInt = Math.floor(Math.random() * 10000);",
+							"",
+							"const firstName = `TestFirstName${randomInt}`;",
+							"const secondName = `TestSecondName${randomInt}`;",
+							"const password = `Password${randomInt}`;",
+							"const birthdate = \"1990-01-01\"; ",
+							"const biography = \"love testing\";",
+							"const city = \"TestCity\";",
+							"",
+							"// Сохраняем в переменные окружения",
+							"pm.environment.set(\"first_name\", firstName);",
+							"pm.environment.set(\"second_name\", secondName);",
+							"pm.environment.set(\"password\", password);",
+							"pm.environment.set(\"birthdate\", birthdate);",
+							"pm.environment.set(\"biography\", biography);",
+							"pm.environment.set(\"city\", city);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const requestBody = pm.request.body.raw ? JSON.parse(pm.request.body.raw) : {};",
+							"pm.environment.set(\"user_id\", pm.response.json().user_id);",
+							"pm.environment.set(\"user_password\", requestBody.password);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"first_name\": \"{{first_name}}\",\n  \"second_name\": \"{{second_name}}\",\n  \"birthdate\": \"{{birthdate}}\",\n  \"biography\": \"{{biography}}\",\n  \"city\": \"{{city}}\",\n  \"password\": \"{{password}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/user/register",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"user",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "POST /login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.environment.set(\"token\", pm.response.json().token);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": \"{{user_id}}\",\n    \"password\": \"{{user_password}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /user/get/{id}",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/user/get/{{user_id}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"user",
+						"get",
+						"{{user_id}}"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -1,0 +1,34 @@
+version: '3'
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: socialnetwork
+    ports:
+      - "5432:5432"
+    networks:
+      - socialnetwork
+    volumes:
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d      
+
+  app:
+    build: ./app
+    depends_on:
+      - db
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_NAME=socialnetwork
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    ports:
+      - "8000:8000"
+    networks:
+      - socialnetwork
+
+networks:
+  socialnetwork:
+    driver: bridge

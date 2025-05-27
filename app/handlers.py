@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 import db
-from models import UserCreate, UserOut, UserLogin
+from models import UserCreate, UserOut, UserLogin, UserResponse
 import bcrypt
 import uuid
 from uuid import UUID
+from typing import List
+
 
 router = APIRouter()
 
@@ -38,12 +40,50 @@ async def login(user: UserLogin):
 @router.get("/user/get/{id}", response_model=UserOut)
 async def get_user(id: UUID):
     conn = await db.get_db_connection()
-    row = await conn.fetchrow('''
-        SELECT id, first_name, second_name, birthdate, biography, city
-        FROM users
-        WHERE id = $1
-    ''', id)
+    row = await conn.fetchrow(
+            '''
+            SELECT
+                id,
+                first_name  AS "firstName",
+                second_name AS "secondName",
+                birthdate,
+                biography,
+                city
+            FROM users
+            WHERE id = $1
+            ''',
+            id
+        )
     await conn.close()
     if not row:
         raise HTTPException(status_code=404, detail="User not found")
     return dict(row)
+
+@router.get("/user/search", response_model=List[UserOut])
+async def search_users(
+    firstName:  str = Query(..., alias="firstName"),
+    secondName: str = Query(..., alias="secondName"),
+):
+    conn = await db.get_db_connection()
+    try:
+        rows = await conn.fetch(
+            '''
+            SELECT
+              id,
+              first_name  AS "firstName",
+              second_name AS "secondName",
+              birthdate,
+              biography,
+              city
+            FROM users
+            WHERE first_name  LIKE $1
+              AND second_name LIKE $2
+            ORDER BY id
+            ''',
+            f"{firstName}%",
+            f"{secondName}%",
+        )
+    finally:
+        await conn.close()
+
+    return [dict(r) for r in rows]

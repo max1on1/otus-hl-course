@@ -8,7 +8,7 @@ set -euo pipefail
 #   PGUSER, PGDATABASE, PGPORT (если отличается от дефолтного),
 #   PGPASSWORD (можно задавать через .pgpass),
 #   (опционально) PGHOST внутри контейнера – обычно localhost.
-export DB_CONTAINER=c7da93251d4d
+export DB_CONTAINER=d61a0c3d30ab
 export PGUSER=postgres
 export PGDATABASE=socialnetwork
 export PGPORT=5432  
@@ -48,7 +48,7 @@ fi
       "$DEFAULT_PASSWORD_HASH"
   done < "$FILE"
 } |
-# Подаём поток в psql внутри контейнера
-docker exec -i "$DB_CONTAINER" psql -v ON_ERROR_STOP=1 \
+
+docker exec -i -e PGPASSWORD="$PGPASSWORD" "$DB_CONTAINER" psql -v ON_ERROR_STOP=1 \
   -U "$PGUSER" -d "$PGDATABASE" ${PGPORT:+-p "$PGPORT"} \
   -c "COPY users (id, first_name, second_name, birthdate, biography, city, password_hash) FROM STDIN WITH CSV HEADER;"

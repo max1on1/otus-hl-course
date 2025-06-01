@@ -1,34 +1,138 @@
 version: '3'
 services:
   db:
-    image: postgres:16
+    container_name: db
+    image: bitnami/postgresql:16
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: socialnetwork
+
+      POSTGRESQL_REPLICATION_MODE: master
+      POSTGRESQL_REPLICATION_USER: replicator
+      POSTGRESQL_REPLICATION_PASSWORD: replica_password
     ports:
       - "5432:5432"
     networks:
       - socialnetwork
     volumes:
-      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d      
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - master_data:/bitnami/postgresql      
 
+  db-replica1:
+      container_name: db-replica1
+      image: bitnami/postgresql:16
+      restart: always
+      user: root    
+      environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_DB: socialnetwork
+        PGDATA: /var/lib/postgresql/data
+
+        POSTGRESQL_REPLICATION_MODE: slave
+        POSTGRESQL_MASTER_HOST: db
+        POSTGRESQL_MASTER_PORT_NUMBER: 5432
+        POSTGRESQL_REPLICATION_USER: replicator
+        POSTGRESQL_REPLICATION_PASSWORD: replica_password 
+        ALLOW_EMPTY_PASSWORD: no       
+      networks:
+        - socialnetwork
+      ports:
+        - "5433:5432"  
+      depends_on:
+        - db
+      volumes:
+        - db-replica1-data:/var/lib/postgresql/data
+
+  db-replica2:
+      container_name: db-replica2
+      image: bitnami/postgresql:16
+      restart: always
+      user: root    
+      environment:
+        POSTGRES_USER: postgres
+        POSTGRES_PASSWORD: postgres
+        POSTGRES_DB: socialnetwork
+        PGDATA: /var/lib/postgresql/data
+
+        POSTGRESQL_REPLICATION_MODE: slave
+        POSTGRESQL_MASTER_HOST: db
+        POSTGRESQL_MASTER_PORT_NUMBER: 5432
+        POSTGRESQL_REPLICATION_USER: replicator
+        POSTGRESQL_REPLICATION_PASSWORD: replica_password 
+        ALLOW_EMPTY_PASSWORD: no       
+      networks:
+        - socialnetwork
+      ports:
+        - "5434:5432"  
+      depends_on:
+        - db
+      volumes:
+        - db-replica2-data:/var/lib/postgresql/data        
   app:
     build: ./app
     depends_on:
       - db
     environment:
-      - DB_HOST=db
+      - DB_HOST=pgpool
       - DB_PORT=5432
       - DB_NAME=socialnetwork
       - DB_USER=postgres
       - DB_PASSWORD=postgres
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     networks:
       - socialnetwork
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: nginx-gateway
+    depends_on: 
+      - app
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "8000:80"              # один внешний порт для всего кластера
+    networks: 
+      - socialnetwork
+
+  pgpool:
+    image: bitnami/pgpool:4
+    restart: always
+    environment:
+      PGPOOL_BACKEND_NODES: 0:db:5432,1:db-replica1:5432,2:db-replica2:5432
+      PGPOOL_POSTGRES_USERNAME: postgres
+      PGPOOL_POSTGRES_PASSWORD: postgres
+
+      PGPOOL_SR_CHECK_USER: replicator
+      PGPOOL_SR_CHECK_PASSWORD: replica_password
+      PGPOOL_ADMIN_USERNAME: admin
+      PGPOOL_ADMIN_PASSWORD: admin_password
+      PGPOOL_MASTER_SLAVE_MODE: stream
+      PGPOOL_LOAD_BALANCING_MODE: on
+      PGPOOL_HEALTH_CHECK_PERIOD: 5
+      PGPOOL_SR_CHECK_PERIOD: 5
+      PGPOOL_NUM_INIT_CHILDREN: 64   
+      PGPOOL_MAX_POOL: 5             
+      PGPOOL_CHILD_LIFE_TIME: 300        
+    ports:
+      - "6432:5432"          
+    networks: [socialnetwork]
+    depends_on:
+      - db
+      - db-replica1
+      - db-replica2
 
 networks:
   socialnetwork:
     driver: bridge
+
+volumes:
+  master_data:
+    driver: local
+  db-replica1-data:
+    driver: local
+  db-replica2-data:
+    driver: local    

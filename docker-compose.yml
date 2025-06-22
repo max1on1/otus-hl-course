@@ -94,7 +94,7 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
-      - "8000:80"              # один внешний порт для всего кластера
+      - "8000:80"             
     networks: 
       - socialnetwork
 
@@ -105,13 +105,10 @@ services:
       PGPOOL_BACKEND_NODES: 0:db:5432,1:db-replica1:5432,2:db-replica2:5432
       PGPOOL_POSTGRES_USERNAME: postgres
       PGPOOL_POSTGRES_PASSWORD: postgres
-
       PGPOOL_SR_CHECK_USER: replicator
       PGPOOL_SR_CHECK_PASSWORD: replica_password
       PGPOOL_ADMIN_USERNAME: admin
       PGPOOL_ADMIN_PASSWORD: admin_password
-      PGPOOL_MASTER_SLAVE_MODE: stream
-      PGPOOL_LOAD_BALANCING_MODE: on
       PGPOOL_HEALTH_CHECK_PERIOD: 5
       PGPOOL_SR_CHECK_PERIOD: 5
       PGPOOL_NUM_INIT_CHILDREN: 64   

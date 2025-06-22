@@ -12,17 +12,58 @@ from fastapi import (
     HTTPException,
     Path,
     Query,
-    status,
+    
 )
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.hash import bcrypt
 
 import db
-from models import UserLoginIn, UserOut, UserRegisterIn
 
+import cache
+from models import (
+    UserLoginIn,
+    UserOut,
+    UserRegisterIn,
+    PostCreateIn,
+    PostUpdateIn,
+    PostOut,
+)
 router = APIRouter()
 
+
+FEED_CACHE_SIZE = cache.FEED_SIZE
+
+
+async def _followers(user_id: UUID) -> List[UUID]:
+    rows = await db.fetch(
+        "SELECT user_id FROM friends WHERE friend_id=$1",
+        user_id,
+    )
+    return [r["user_id"] for r in rows]
+
+
+async def _load_feed(user_id: UUID) -> List[dict]:
+    rows = await db.fetch(
+        """
+        SELECT p.id, p.text, p.author_user_id
+        FROM friends f
+        JOIN posts p ON p.author_user_id = f.friend_id
+        WHERE f.user_id = $1
+        ORDER BY p.created_at DESC
+        LIMIT $2
+        """,
+        user_id,
+        FEED_CACHE_SIZE,
+    )
+    posts = [dict(r) for r in rows]
+    await cache.save_feed(user_id, posts)
+    return posts
+
+
+async def _push_to_feeds(post: dict) -> None:
+    followers = await _followers(post["author_user_id"])
+    await cache.push_post(followers, post)
 # --------------
 # JWT helpers
 # --------------
@@ -149,6 +190,7 @@ async def add_friend(
         current_user,
         user_id,
     )
+    await _load_feed(current_user)
     return {"ok": True}
 
 
@@ -162,6 +204,7 @@ async def remove_friend(
         current_user,
         user_id,
     )
+    await _load_feed(current_user)
     return {"ok": True}
 
 @router.get("/friend/list", response_model=List[UserOut])
@@ -182,3 +225,93 @@ async def list_friends(current_user: UUID = Depends(get_current_user_id)):
         current_user,
     )
     return [UserOut(**dict(r)) for r in rows]
+
+# ------------
+# Posts
+# ------------
+
+@router.post("/post/create", response_model=UUID)
+async def create_post(
+    payload: PostCreateIn,
+    current_user: UUID = Depends(get_current_user_id),
+):
+    post_id = uuid4()
+    await db.execute(
+        """
+        INSERT INTO posts(id, author_user_id, text)
+        VALUES($1,$2,$3)
+        """,
+        post_id,
+        current_user,
+        payload.text,
+    )
+    post = {"id": post_id, "text": payload.text, "author_user_id": current_user}
+    await _push_to_feeds(post)
+    return post_id
+
+
+@router.put("/post/update")
+async def update_post(
+    payload: PostUpdateIn,
+    current_user: UUID = Depends(get_current_user_id),
+):
+    row = await db.fetchrow(
+        "SELECT author_user_id FROM posts WHERE id=$1",
+        payload.id,
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if row["author_user_id"] != current_user:
+        raise HTTPException(status_code=401, detail="Not allowed")
+    await db.execute(
+        "UPDATE posts SET text=$2, updated_at=now() WHERE id=$1",
+        payload.id,
+        payload.text,
+    )
+    followers = await _followers(current_user)
+    for uid in followers:
+        await _load_feed(uid)
+    return {"ok": True}
+
+
+@router.put("/post/delete/{id}")
+async def delete_post(
+    id: UUID = Path(...),
+    current_user: UUID = Depends(get_current_user_id),
+):
+    row = await db.fetchrow(
+        "SELECT author_user_id FROM posts WHERE id=$1",
+        id,
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    if row["author_user_id"] != current_user:
+        raise HTTPException(status_code=401, detail="Not allowed")
+    await db.execute("DELETE FROM posts WHERE id=$1", id)
+    followers = await _followers(current_user)
+    for uid in followers:
+        await _load_feed(uid)
+    return {"ok": True}
+
+
+@router.get("/post/get/{id}", response_model=PostOut)
+async def get_post(id: UUID = Path(...)):
+    row = await db.fetchrow(
+        "SELECT id, text, author_user_id FROM posts WHERE id=$1",
+        id,
+    )
+    if row is None:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return PostOut(**dict(row))
+
+
+@router.get("/post/feed", response_model=List[PostOut])
+async def feed(
+    offset: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1),
+    current_user: UUID = Depends(get_current_user_id),
+):
+    if not await cache.has_feed(current_user):
+        await _load_feed(current_user)
+    posts = await cache.get_feed(current_user, offset, limit)
+    return [PostOut(**p) for p in posts]

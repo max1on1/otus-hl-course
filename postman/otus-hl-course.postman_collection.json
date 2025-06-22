@@ -54,7 +54,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"first_name\": \"{{first_name}}\",\n  \"second_name\": \"{{second_name}}\",\n  \"birthdate\": \"{{birthdate}}\",\n  \"biography\": \"{{biography}}\",\n  \"city\": \"{{city}}\",\n  \"password\": \"{{password}}\"\n}",
+					"raw": "{\n  \"firstName\": \"{{first_name}}\",\n  \"secondName\": \"{{second_name}}\",\n  \"birthdate\": \"{{birthdate}}\",\n  \"biography\": \"{{biography}}\",\n  \"city\": \"{{city}}\",\n  \"password\": \"{{password}}\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -131,6 +131,521 @@
 						"user",
 						"get",
 						"{{user_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "GET /user/search/",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"",
+							"// Или можно взять из заранее заданного списка префиксов",
+							"//const firstPrefixes  = ['А','Б','В','Г','Д','Е','Ж','З','И'];",
+							"//const secondPrefixes = ['П','И','С','Т','Г','Ф','Н','Р','К'];",
+							"",
+							"const firstPrefixes  = ['Абрамов','Борисов'];",
+							"const secondPrefixes = ['Вера','Георгий'];",
+							"",
+							"// Выбираем либо случайную букву, либо префикс из списка:",
+							"const firstName  = Math.random() < 0.5",
+							"//  ? randomCyrillic()",
+							"  ? firstPrefixes[Math.floor(Math.random() * firstPrefixes.length)]",
+							"  : firstPrefixes[Math.floor(Math.random() * firstPrefixes.length)];",
+							"const secondName = Math.random() < 0.5",
+							"//  ? randomCyrillic()",
+							"  ? secondPrefixes[Math.floor(Math.random() * secondPrefixes.length)]",
+							"  : secondPrefixes[Math.floor(Math.random() * secondPrefixes.length)];",
+							"",
+							"// Сохраняем в переменные окружения (или коллекции)",
+							"pm.variables.set(\"firstName\", firstName);",
+							"pm.variables.set(\"secondName\", secondName);",
+							"",
+							"console.log(\"Searching for:\", firstName, secondName);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/user/search?firstName={{firstName}}&secondName={{secondName}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"user",
+						"search"
+					],
+					"query": [
+						{
+							"key": "firstName",
+							"value": "{{firstName}}"
+						},
+						{
+							"key": "secondName",
+							"value": "{{secondName}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/friend/set/{user_id}",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/friend/set/5d8dbe19-eac0-4aac-911f-a9e397dfb413",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"friend",
+						"set",
+						"5d8dbe19-eac0-4aac-911f-a9e397dfb413"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/friend/list",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/friend/list",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"friend",
+						"list"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/friend/delete/{user_id}",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/friend/delete/5d8dbe19-eac0-4aac-911f-a9e397dfb413",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"friend",
+						"delete",
+						"5d8dbe19-eac0-4aac-911f-a9e397dfb413"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/post/create",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"",
+							"// Или можно взять из заранее заданного списка префиксов",
+							"const firstPrefixes  = ['А','Б','В','Г','Д','Е','Ж','З','И'];",
+							"const secondPrefixes = ['П','И','С','Т','Г','Ф','Н','Р','К'];",
+							"",
+							"// Выбираем либо случайную букву, либо префикс из списка:",
+							"const firstName  = Math.random() < 0.5",
+							"//  ? randomCyrillic()",
+							"  ? firstPrefixes[Math.floor(Math.random() * firstPrefixes.length)]",
+							"  : firstPrefixes[Math.floor(Math.random() * firstPrefixes.length)];",
+							"const secondName = Math.random() < 0.5",
+							"//  ? randomCyrillic()",
+							"  ? secondPrefixes[Math.floor(Math.random() * secondPrefixes.length)]",
+							"  : secondPrefixes[Math.floor(Math.random() * secondPrefixes.length)];",
+							"",
+							"// Сохраняем в переменные окружения (или коллекции)",
+							"pm.variables.set(\"firstName\", firstName);",
+							"pm.variables.set(\"secondName\", secondName);",
+							"",
+							"console.log(\"Searching for:\", firstName, secondName);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8000/post/create/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"post",
+						"create",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/post/update",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"",
+							"// Или можно взять из заранее заданного списка префиксов",
+							"const firstPrefixes  = ['А','Б','В','Г','Д','Е','Ж','З','И'];",
+							"const secondPrefixes = ['П','И','С','Т','Г','Ф','Н','Р','К'];",
+							"",
+							"// Выбираем либо случайную букву, либо префикс из списка:",
+							"const firstName  = Math.random() < 0.5",
+							"//  ? randomCyrillic()",
+							"  ? firstPrefixes[Math.floor(Math.random() * firstPrefixes.length)]",
+							"  : firstPrefixes[Math.floor(Math.random() * firstPrefixes.length)];",
+							"const secondName = Math.random() < 0.5",
+							"//  ? randomCyrillic()",
+							"  ? secondPrefixes[Math.floor(Math.random() * secondPrefixes.length)]",
+							"  : secondPrefixes[Math.floor(Math.random() * secondPrefixes.length)];",
+							"",
+							"// Сохраняем в переменные окружения (или коллекции)",
+							"pm.variables.set(\"firstName\", firstName);",
+							"pm.variables.set(\"secondName\", secondName);",
+							"",
+							"console.log(\"Searching for:\", firstName, secondName);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"id\": {{post_id}}\n    \"text\": \"updated text 123123123123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/post/update/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"post",
+						"update",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/post/get/",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"",
+							"// Или можно взять из заранее заданного списка префиксов",
+							"const firstPrefixes  = ['А','Б','В','Г','Д','Е','Ж','З','И'];",
+							"const secondPrefixes = ['П','И','С','Т','Г','Ф','Н','Р','К'];",
+							"",
+							"// Выбираем либо случайную букву, либо префикс из списка:",
+							"const firstName  = Math.random() < 0.5",
+							"//  ? randomCyrillic()",
+							"  ? firstPrefixes[Math.floor(Math.random() * firstPrefixes.length)]",
+							"  : firstPrefixes[Math.floor(Math.random() * firstPrefixes.length)];",
+							"const secondName = Math.random() < 0.5",
+							"//  ? randomCyrillic()",
+							"  ? secondPrefixes[Math.floor(Math.random() * secondPrefixes.length)]",
+							"  : secondPrefixes[Math.floor(Math.random() * secondPrefixes.length)];",
+							"",
+							"// Сохраняем в переменные окружения (или коллекции)",
+							"pm.variables.set(\"firstName\", firstName);",
+							"pm.variables.set(\"secondName\", secondName);",
+							"",
+							"console.log(\"Searching for:\", firstName, secondName);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/post/get/{{post_id}}",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"post",
+						"get",
+						"{{post_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/post/feed",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/post/feed",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"post",
+						"feed"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/post/feed ofset",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/post/feed",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"post",
+						"feed"
 					]
 				}
 			},

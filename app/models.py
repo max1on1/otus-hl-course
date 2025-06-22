@@ -16,8 +16,9 @@ class UserRegisterIn(BaseModel):
     city: Optional[str] = None
     password: str
 
-    class Config:
-        allow_population_by_field_name = True
+    model_config = {
+        "populate_by_name": True  
+    }    
 
 
 class UserLoginIn(BaseModel):
@@ -35,6 +36,30 @@ class UserOut(BaseModel):
     birthdate: date
     biography: Optional[str] = None
     city: Optional[str] = None
+    
+    model_config = {
+        "populate_by_name": True  
+    }    
 
-    class Config:
-        allow_population_by_field_name = True
+
+# -----------------
+# Posts models
+# -----------------
+
+class PostCreateIn(BaseModel):
+    text: str
+
+
+class PostUpdateIn(BaseModel):
+    id: UUID
+    text: str
+
+
+class PostOut(BaseModel):
+    id: UUID
+    text: str
+    author_user_id: UUID = Field(..., alias="authorUserId")
+
+    model_config = {
+        "populate_by_name": True  
+    }    

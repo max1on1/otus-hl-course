@@ -1,35 +1,40 @@
-from pydantic import BaseModel, Field
-from typing import Optional
+from __future__ import annotations
+
 from datetime import date
+from typing import Optional
 from uuid import UUID
 
-class UserCreate(BaseModel):
-    first_name: str
-    second_name: str
-    birthdate: date  
-    biography: str
-    city: str
-    password: str
+from pydantic import BaseModel, Field
 
-class UserOut(BaseModel):
-    id: UUID
-    firstName:  str = Field(..., alias="firstName")
-    secondName: str = Field(..., alias="secondName")
-    birthdate:  date
-    biography:  Optional[str]
-    city:       Optional[str]
+
+#  входящие модели
+class UserRegisterIn(BaseModel):
+    first_name: str = Field(..., alias="firstName")
+    second_name: str = Field(..., alias="secondName")
+    birthdate: date
+    biography: Optional[str] = None
+    city: Optional[str] = None
+    password: str
 
     class Config:
         allow_population_by_field_name = True
 
-class UserLogin(BaseModel):
+
+class UserLoginIn(BaseModel):
     id: UUID
     password: str
 
-class UserResponse(BaseModel):
-    id: str
-    first_name: str
-    second_name: str
+
+# исходящие модели
+class UserOut(BaseModel):
+    """Публичный профиль пользователя (response model)."""
+
+    id: UUID
+    first_name: str = Field(..., alias="firstName")
+    second_name: str = Field(..., alias="secondName")
     birthdate: date
-    biography: Optional[str]
-    city: Optional[str]    
+    biography: Optional[str] = None
+    city: Optional[str] = None
+
+    class Config:
+        allow_population_by_field_name = True

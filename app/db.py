@@ -1,15 +1,5 @@
 from __future__ import annotations
 
-"""Database helper with separate write‑ and read‑pools.
-
-* WRITE_DSN  ─ мастер (через Pgpool‑rw или напрямую)
-* READ_DSNS  ─ список реплик (через Pgpool‑ro или хосты)
-
-Пулы создаются при `startup()` и закрываются в `shutdown()`.
-`get_conn(readonly=True)` выбирает случайный read‑pool.
-Wrapper‑функции `fetch*` принимают флаг `readonly` для удобства.
-"""
-
 import os
 import random
 from typing import Optional, Sequence, List

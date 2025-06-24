@@ -71,6 +71,35 @@ services:
         - db
       volumes:
         - db-replica2-data:/var/lib/postgresql/data        
+  dialog-db1:
+    container_name: dialog-db1
+    image: bitnami/postgresql:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dialogdb
+    ports:
+      - "5435:5432"
+    networks:
+      - socialnetwork
+    volumes:
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+
+  dialog-db2:
+    container_name: dialog-db2
+    image: bitnami/postgresql:16
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: dialogdb
+    ports:
+      - "5436:5432"
+    networks:
+      - socialnetwork
+    volumes:
+      - ./docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
   redis:
     image: redis:7-alpine
     container_name: redis
@@ -92,6 +121,7 @@ services:
       - DB_PASSWORD=postgres
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - DIALOG_DB_DSNS=postgresql://postgres:postgres@dialog-db1:5432/dialogdb,postgresql://postgres:postgres@dialog-db2:5432/dialogdb
     expose:
       - "8000"
     networks:

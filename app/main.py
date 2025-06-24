@@ -6,6 +6,7 @@ from fastapi import FastAPI
 
 import db
 import cache
+import dialog_db
 from handlers import router
 
 
@@ -13,8 +14,10 @@ from handlers import router
 async def lifespan(app: FastAPI):
     await db.connect()
     await cache.connect()
+    await dialog_db.connect()
     yield
     await cache.disconnect()
+    await dialog_db.disconnect()
     await db.disconnect()
 
 

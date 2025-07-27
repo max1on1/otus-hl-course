@@ -9,7 +9,6 @@ import cache
 import dialog_db
 import mq
 from handlers import router
-from websocket_router import ws_router
 
 
 @asynccontextmanager
@@ -34,4 +33,3 @@ app = FastAPI(
 )
 
 app.include_router(router)
-app.include_router(ws_router)

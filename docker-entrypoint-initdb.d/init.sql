@@ -30,16 +30,20 @@ CREATE INDEX IF NOT EXISTS idx_users_name_prefix
     first_name text_pattern_ops,
     second_name text_pattern_ops
   );
-
-CREATE TABLE IF NOT EXISTS posts (
+  
+CREATE TABLE IF NOT EXISTS dialog_messages (
     id UUID PRIMARY KEY,
-    author_user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    sender_user_id UUID NOT NULL,
+    recipient_user_id UUID NOT NULL,
     text TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS idx_posts_author_created
-  ON posts (author_user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_dialog_pair_created
+  ON dialog_messages (
+      LEAST(sender_user_id, recipient_user_id),
+      GREATEST(sender_user_id, recipient_user_id),
+      created_at DESC
+  );
 
 COMMIT;

@@ -28,7 +28,10 @@ from models import (
     PostCreateIn,
     PostUpdateIn,
     PostOut,
+    DialogMessageIn,
+    DialogMessage,
 )
+import dialogs
 router = APIRouter()
 
 
@@ -315,3 +318,38 @@ async def feed(
         await _load_feed(current_user)
     posts = await cache.get_feed(current_user, offset, limit)
     return [PostOut(**p) for p in posts]
+
+# ------------
+# Dialogs
+# ------------
+
+from models import DialogMessageIn, DialogMessage
+import dialogs
+
+
+@router.post("/dialog/{user_id}/send", status_code=200)
+async def dialog_send(
+    payload: DialogMessageIn,
+    user_id: UUID = Path(...),
+    current_user: UUID = Depends(get_current_user_id),
+):
+    await dialogs.send_message(current_user, user_id, payload.text)
+    return {"ok": True}
+
+
+@router.get("/dialog/{user_id}/list", response_model=List[DialogMessage])
+async def dialog_list(
+    user_id: UUID = Path(...),
+    current_user: UUID = Depends(get_current_user_id),
+):
+    rows = await dialogs.list_dialog(current_user, user_id)
+    return [
+        DialogMessage(
+            id=row["id"],
+            sender_user_id=row["sender_user_id"],
+            recipient_user_id=row["recipient_user_id"],
+            text=row["text"],
+            created_at=row["created_at"],
+        )
+        for row in rows
+    ]

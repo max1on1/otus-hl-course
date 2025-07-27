@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 from uuid import UUID
 
@@ -16,9 +16,8 @@ class UserRegisterIn(BaseModel):
     city: Optional[str] = None
     password: str
 
-    model_config = {
-        "populate_by_name": True  
-    }    
+    class Config:
+        allow_population_by_field_name = True
 
 
 class UserLoginIn(BaseModel):
@@ -36,11 +35,9 @@ class UserOut(BaseModel):
     birthdate: date
     biography: Optional[str] = None
     city: Optional[str] = None
-    
-    model_config = {
-        "populate_by_name": True  
-    }    
 
+    class Config:
+        allow_population_by_field_name = True
 
 # -----------------
 # Posts models
@@ -61,5 +58,22 @@ class PostOut(BaseModel):
     author_user_id: UUID = Field(..., alias="authorUserId")
 
     model_config = {
-        "populate_by_name": True  
-    }    
+        "populate_by_name": True  }
+# -----------------
+# Dialog models
+# -----------------
+
+class DialogMessageIn(BaseModel):
+    text: str
+
+
+class DialogMessage(BaseModel):
+    id: UUID
+    sender_user_id: UUID = Field(..., alias="senderUserId")
+    recipient_user_id: UUID = Field(..., alias="recipientUserId")
+    text: str
+    created_at: datetime = Field(..., alias="createdAt")
+
+    model_config = {
+        "populate_by_name": True
+    }        

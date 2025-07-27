@@ -650,6 +650,134 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "/dialog/{user}/send",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"",
+							"// Или можно взять из заранее заданного списка префиксов",
+							"const firstPrefixes  = ['А','Б','В','Г','Д','Е','Ж','З','И'];",
+							"const secondPrefixes = ['П','И','С','Т','Г','Ф','Н','Р','К'];",
+							"",
+							"// Выбираем либо случайную букву, либо префикс из списка:",
+							"const firstName  = Math.random() < 0.5",
+							"//  ? randomCyrillic()",
+							"  ? firstPrefixes[Math.floor(Math.random() * firstPrefixes.length)]",
+							"  : firstPrefixes[Math.floor(Math.random() * firstPrefixes.length)];",
+							"const secondName = Math.random() < 0.5",
+							"//  ? randomCyrillic()",
+							"  ? secondPrefixes[Math.floor(Math.random() * secondPrefixes.length)]",
+							"  : secondPrefixes[Math.floor(Math.random() * secondPrefixes.length)];",
+							"",
+							"// Сохраняем в переменные окружения (или коллекции)",
+							"pm.variables.set(\"firstName\", firstName);",
+							"pm.variables.set(\"secondName\", secondName);",
+							"",
+							"console.log(\"Searching for:\", firstName, secondName);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"text\": \"post test\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/dialog/618631c8-93ff-43d4-9aaa-c98d4403751f/send",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"dialog",
+						"618631c8-93ff-43d4-9aaa-c98d4403751f",
+						"send"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/dialog/{user}/list",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8000/dialog/{{user_id}}/list",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"dialog",
+						"{{user_id}}",
+						"list"
+					]
+				}
+			},
+			"response": []
 		}
 	]
 }

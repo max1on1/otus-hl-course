@@ -73,7 +73,7 @@ async def _push_to_feeds(post: dict) -> None:
 # --------------
 # JWT helpers
 # --------------
-SECRET_KEY = os.getenv("SECRET_KEY", "dev‑secret‑please‑override")
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-please-override")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
@@ -361,7 +361,8 @@ async def dialog_list(
 
 @router.websocket("/post/feed/posted")
 async def feed_ws(websocket: WebSocket):
-    token = websocket.headers.get("Authorization")
+    print(dict(websocket.headers))
+    token = websocket.headers.get("authorization")
     if token and token.startswith("Bearer "):
         token = token.split()[1]
     else:

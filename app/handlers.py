@@ -12,7 +12,8 @@ from fastapi import (
     HTTPException,
     Path,
     Query,
-    
+    WebSocket,
+    WebSocketDisconnect,    
 )
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
@@ -32,6 +33,8 @@ from models import (
     DialogMessage,
 )
 import dialogs
+import mq
+
 router = APIRouter()
 
 
@@ -248,8 +251,10 @@ async def create_post(
         current_user,
         payload.text,
     )
-    post = {"id": post_id, "text": payload.text, "author_user_id": current_user}
-    await _push_to_feeds(post)
+    post = {"id": str(post_id), "text": payload.text, "author_user_id": str(current_user)}
+    followers = await _followers(current_user)
+    for uid in followers:
+        await mq.publish_post(uid, post)
     return post_id
 
 
@@ -353,3 +358,28 @@ async def dialog_list(
         )
         for row in rows
     ]
+
+@router.websocket("/post/feed/posted")
+async def feed_ws(websocket: WebSocket):
+    token = websocket.headers.get("Authorization")
+    if token and token.startswith("Bearer "):
+        token = token.split()[1]
+    else:
+        await websocket.close(code=1008)
+        return
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = UUID(payload["sub"])
+    except Exception:
+        await websocket.close(code=1008)
+        return
+
+    await websocket.accept()
+    task = await mq.subscribe(user_id, websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        task.cancel()

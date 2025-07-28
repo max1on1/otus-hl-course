@@ -1,11 +1,12 @@
 # Что есть в проекте
-	•	Backend на FastAPI
-	•	База данных PostgreSQL
-	•	Подключение через asyncpg
-	•	Контейнеризация через Docker и docker-compose
-	•	Чистые миграции в SQL
-	•	Готовая коллекция запросов для Postman
-
+- Backend на **FastAPI**
+- База данных **PostgreSQL** с репликацией
+- Подключение к БД через `asyncpg`
+- Кеширование ленты друзей в **Redis**
+- Обмен сообщениями через **RabbitMQ**
+- Контейнеризация при помощи **Docker Compose**
+- Чистые SQL‑миграции
+- Готовая коллекция запросов для **Postman**
 
 ## Как запустить проект
 
@@ -41,25 +42,23 @@ localhost:5432 (user: postgres, pass: postgres, db: socialnetwork)
 
 ### Структура проекта
 ```
-├── app
-│   ├── db.py
-│   ├── Dockerfile
-│   ├── handlers.py
-│   ├── main.py
-│   ├── models.py
-│   └── requirements.txt
-├── docker-compose.yml
-├── migrations
-│   └── create_tables.py
-├── postman <- Postman collection
-│   ├── otus-hl-course.postman_collection.json 
-│   └── otus-hl-env.postman_environment.json
-├── README.md
-└── tests
-    └── test_endpoints.py <- автотесты pytest 
+├── app                  # исходный код приложения
+│   ├── handlers.py      # обработчики HTTP
+│   ├── models.py        # Pydantic-модели
+│   ├── db.py            # работа с PostgreSQL
+│   ├── cache.py         # Redis-кеширование
+│   ├── dialogs.py       # диалоги пользователей
+│   ├── mq.py            # работа с RabbitMQ
+│   └── Dockerfile       # образ приложения
+├── docker-compose.yml   # инфраструктура проекта
+├── docker-entrypoint-initdb.d
+│   └── init.sql         # миграции БД
+├── postman              # коллекция Postman
+├── scripts              # утилиты для генерации данных
+└── README.md
 ```
 ### Тесты
-Навсякий случай можно протестировать pytest
+coming soon
 
 ### Автор
 Максим Глотов

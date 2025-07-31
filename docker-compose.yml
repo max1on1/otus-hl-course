@@ -108,11 +108,21 @@ services:
       - "6379:6379"
     networks:
       - socialnetwork
+  rabbitmq:
+      image: rabbitmq:3-management
+      container_name: rabbitmq
+      restart: always
+      ports:
+        - "5672:5672"
+        - "15672:15672"
+      networks:
+        - socialnetwork      
   app:
     build: ./app
     depends_on:
       - db
       - redis
+      - rabbitmq
     environment:
       - DB_HOST=pgpool
       - DB_PORT=5432
@@ -122,6 +132,9 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - DIALOG_DB_DSNS=postgresql://postgres:postgres@dialog-db1:5432/dialogdb,postgresql://postgres:postgres@dialog-db2:5432/dialogdb
+      - RABBIT_URL=amqp://guest:guest@rabbitmq:5672/
+#    ports:
+#      - "80:8000"  
     expose:
       - "8000"
     networks:

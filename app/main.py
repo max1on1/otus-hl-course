@@ -6,7 +6,6 @@ from fastapi import FastAPI
 
 import db
 import cache
-import dialog_db
 import mq
 from handlers import router
 
@@ -15,14 +14,12 @@ from handlers import router
 async def lifespan(app: FastAPI):
     await db.connect()
     await cache.connect()
-    await dialog_db.connect()
     await mq.connect()
     worker = await mq.start_cache_worker()    
     yield
     worker.cancel()
     await mq.disconnect()    
     await cache.disconnect()
-    await dialog_db.disconnect()
     await db.disconnect()
 
 
@@ -33,3 +30,15 @@ app = FastAPI(
 )
 
 app.include_router(router)
+
+# x-request-id propagation
+from starlette.requests import Request
+from starlette.responses import Response
+import uuid
+
+@app.middleware("http")
+async def add_request_id_header(request: Request, call_next):
+    req_id = request.headers.get("x-request-id") or str(uuid.uuid4())
+    response: Response = await call_next(request)
+    response.headers["x-request-id"] = req_id
+    return response

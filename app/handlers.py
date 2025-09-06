@@ -32,7 +32,6 @@ from models import (
     DialogMessageIn,
     DialogMessage,
 )
-import dialogs
 import mq
 
 router = APIRouter()
@@ -73,7 +72,7 @@ async def _push_to_feeds(post: dict) -> None:
 # --------------
 # JWT helpers
 # --------------
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-please-override")
+SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
@@ -329,7 +328,8 @@ async def feed(
 # ------------
 
 from models import DialogMessageIn, DialogMessage
-import dialogs
+import dialog_client
+from fastapi import Request
 
 
 @router.post("/dialog/{user_id}/send", status_code=200)
@@ -337,8 +337,15 @@ async def dialog_send(
     payload: DialogMessageIn,
     user_id: UUID = Path(...),
     current_user: UUID = Depends(get_current_user_id),
+    request: Request = None,
 ):
-    await dialogs.send_message(current_user, user_id, payload.text)
+    # Backward compatible endpoint: proxy to dialog-service
+    auth_header = request.headers.get("authorization") if request else None
+    token = auth_header.split()[1] if auth_header and auth_header.startswith("Bearer ") else None
+    x_req_id = request.headers.get("x-request-id") if request else None
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing Bearer token")
+    await dialog_client.send_message(token, user_id, payload.text, x_req_id)
     return {"ok": True}
 
 
@@ -346,15 +353,22 @@ async def dialog_send(
 async def dialog_list(
     user_id: UUID = Path(...),
     current_user: UUID = Depends(get_current_user_id),
+    request: Request = None,
 ):
-    rows = await dialogs.list_dialog(current_user, user_id)
+    # Backward compatible endpoint: proxy to dialog-service
+    auth_header = request.headers.get("authorization") if request else None
+    token = auth_header.split()[1] if auth_header and auth_header.startswith("Bearer ") else None
+    x_req_id = request.headers.get("x-request-id") if request else None
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing Bearer token")
+    rows = await dialog_client.list_dialog(token, user_id, x_req_id)
     return [
         DialogMessage(
             id=row["id"],
-            sender_user_id=row["sender_user_id"],
-            recipient_user_id=row["recipient_user_id"],
+            sender_user_id=row["senderUserId"] if "senderUserId" in row else row.get("sender_user_id"),
+            recipient_user_id=row["recipientUserId"] if "recipientUserId" in row else row.get("recipient_user_id"),
             text=row["text"],
-            created_at=row["created_at"],
+            created_at=row["createdAt"] if "createdAt" in row else row.get("created_at"),
         )
         for row in rows
     ]

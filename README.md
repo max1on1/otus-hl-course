@@ -4,6 +4,7 @@
 - Подключение к БД через `asyncpg`
 - Кеширование ленты друзей в **Redis**
 - Обмен сообщениями через **RabbitMQ**
+- Сервис диалогов вынесен в отдельный сервис (REST)
 - Контейнеризация при помощи **Docker Compose**
 - Чистые SQL‑миграции
 - Готовая коллекция запросов для **Postman**
@@ -27,8 +28,14 @@ docker-compose up --build
 
 ### После запуска будут доступны сервисы:
 
-Backend API (FastAPI)
+API-шлюз (nginx)
 http://localhost:8000
+
+Монолит (FastAPI)
+http://app:8000 (внутри сети docker)
+
+Dialog Service (FastAPI)
+http://dialog-service:8001 (внутри сети docker)
 
 PostgreSQL
 localhost:5432 (user: postgres, pass: postgres, db: socialnetwork)
@@ -47,9 +54,15 @@ localhost:5432 (user: postgres, pass: postgres, db: socialnetwork)
 │   ├── models.py        # Pydantic-модели
 │   ├── db.py            # работа с PostgreSQL
 │   ├── cache.py         # Redis-кеширование
-│   ├── dialogs.py       # диалоги пользователей
+│   ├── dialog_client.py # REST‑клиент диалог-сервиса
+│   ├── dialogs.py       # (legacy) старая имплементация, не используется
 │   ├── mq.py            # работа с RabbitMQ
 │   └── Dockerfile       # образ приложения
+├── dialog-service       # выделенный сервис диалогов
+│   ├── main.py          # HTTP API сервиса
+│   ├── dialog_db.py     # доступ к шардированной БД
+│   ├── models.py        # модели
+│   └── Dockerfile       # образ сервиса
 ├── docker-compose.yml   # инфраструктура проекта
 ├── docker-entrypoint-initdb.d
 │   └── init.sql         # миграции БД
@@ -62,3 +75,30 @@ coming soon
 
 ### Автор
 Максим Глотов
+
+## Миграция диалогов в отдельный сервис
+
+Описание протокола взаимодействия и обратная совместимость:
+
+- Старые клиенты: продолжают использовать эндпоинты монолита
+  - POST `/dialog/{userId}/send`
+  - GET  `/dialog/{userId}/list`
+  Монолит проксирует запросы в Dialog Service и возвращает ответы в прежнем формате.
+
+- Новые клиенты: могут ходить напрямую через новый API-шлюз к Dialog Service
+  - POST `/api/v1/dialog/{userId}/send`
+  - GET  `/api/v1/dialog/{userId}/list`
+
+- Аутентификация: передается через `Authorization: Bearer <JWT>`; обе службы используют единый `SECRET_KEY`.
+
+- Сквозное логирование: используется заголовок `x-request-id`.
+  - Nginx добавляет/пробрасывает `x-request-id` к монолиту и сервису диалогов.
+  - Монолит и диалог‑сервис возвращают `x-request-id` в ответе и прокидывают его дальше при внутренних REST‑вызовах.
+
+Переменные окружения:
+- Монолит: `DIALOG_SERVICE_URL` указывает на `http://dialog-service:8001`.
+- Диалог‑сервис: `DIALOG_DB_DSNS` — список DSN через запятую для шардинга сообщений.
+
+Запуск:
+- `docker-compose up --build`
+- API: старое `/dialog/...` через `http://localhost:8000`, новое `/api/v1/dialog/...` через тот же адрес.

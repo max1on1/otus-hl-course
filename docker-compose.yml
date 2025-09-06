@@ -133,10 +133,26 @@ services:
       - REDIS_PORT=6379
       - DIALOG_DB_DSNS=postgresql://postgres:postgres@dialog-db1:5432/dialogdb,postgresql://postgres:postgres@dialog-db2:5432/dialogdb
       - RABBIT_URL=amqp://guest:guest@rabbitmq:5672/
+      - DIALOG_SERVICE_URL=http://dialog-service:8001
 #    ports:
 #      - "80:8000"  
     expose:
       - "8000"
+    networks:
+      - socialnetwork
+
+  dialog-service:
+    build: ./dialog-service
+    container_name: dialog-service
+    restart: always
+    environment:
+      - DIALOG_DB_DSNS=postgresql://postgres:postgres@dialog-db1:5432/dialogdb,postgresql://postgres:postgres@dialog-db2:5432/dialogdb
+      - SECRET_KEY=dev-secret
+    expose:
+      - "8001"
+    depends_on:
+      - dialog-db1
+      - dialog-db2
     networks:
       - socialnetwork
 
@@ -145,6 +161,7 @@ services:
     container_name: nginx-gateway
     depends_on: 
       - app
+      - dialog-service
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
@@ -186,4 +203,4 @@ volumes:
   db-replica1-data:
     driver: local
   db-replica2-data:
-    driver: local    
+    driver: local

@@ -330,6 +330,7 @@ async def feed(
 from models import DialogMessageIn, DialogMessage
 import dialog_client
 from fastapi import Request
+import counter_client
 
 
 @router.post("/dialog/{user_id}/send", status_code=200)
@@ -398,3 +399,47 @@ async def feed_ws(websocket: WebSocket):
         pass
     finally:
         task.cancel()
+
+# -------------
+# Counters API (proxy to counter-service)
+# -------------
+
+@router.get("/counter/unread/total")
+async def counter_unread_total(
+    current_user: UUID = Depends(get_current_user_id),
+    request: Request = None,
+):
+    auth_header = request.headers.get("authorization") if request else None
+    token = auth_header.split()[1] if auth_header and auth_header.startswith("Bearer ") else None
+    x_req_id = request.headers.get("x-request-id") if request else None
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing Bearer token")
+    return await counter_client.unread_total(token, x_req_id)
+
+
+@router.get("/counter/dialog/{user_id}/unread")
+async def counter_unread_with_peer(
+    user_id: UUID = Path(...),
+    current_user: UUID = Depends(get_current_user_id),
+    request: Request = None,
+):
+    auth_header = request.headers.get("authorization") if request else None
+    token = auth_header.split()[1] if auth_header and auth_header.startswith("Bearer ") else None
+    x_req_id = request.headers.get("x-request-id") if request else None
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing Bearer token")
+    return await counter_client.unread_with_peer(token, user_id, x_req_id)
+
+
+@router.post("/counter/dialog/{user_id}/reset")
+async def counter_reset_unread(
+    user_id: UUID = Path(...),
+    current_user: UUID = Depends(get_current_user_id),
+    request: Request = None,
+):
+    auth_header = request.headers.get("authorization") if request else None
+    token = auth_header.split()[1] if auth_header and auth_header.startswith("Bearer ") else None
+    x_req_id = request.headers.get("x-request-id") if request else None
+    if not token:
+        raise HTTPException(status_code=401, detail="Missing Bearer token")
+    return await counter_client.reset_unread(token, user_id, x_req_id)

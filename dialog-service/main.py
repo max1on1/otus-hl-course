@@ -8,6 +8,7 @@ from jose import JWTError, jwt
 import os
 
 from models import DialogMessageIn, DialogMessage
+import mq as dialog_mq
 
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
@@ -72,6 +73,11 @@ async def dialog_send(
         current_user,
         user_id,
         payload.text,
+    )
+    # Publish event for counters service
+    from datetime import datetime
+    await dialog_mq.publish_message_created(
+        str(msg_id), str(current_user), str(user_id), datetime.utcnow()
     )
     return {"ok": True, "id": str(msg_id)}
 

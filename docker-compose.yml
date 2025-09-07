@@ -134,6 +134,7 @@ services:
       - DIALOG_DB_DSNS=postgresql://postgres:postgres@dialog-db1:5432/dialogdb,postgresql://postgres:postgres@dialog-db2:5432/dialogdb
       - RABBIT_URL=amqp://guest:guest@rabbitmq:5672/
       - DIALOG_SERVICE_URL=http://dialog-service:8001
+      - COUNTER_SERVICE_URL=http://counter-service:8002
 #    ports:
 #      - "80:8000"  
     expose:
@@ -148,6 +149,7 @@ services:
     environment:
       - DIALOG_DB_DSNS=postgresql://postgres:postgres@dialog-db1:5432/dialogdb,postgresql://postgres:postgres@dialog-db2:5432/dialogdb
       - SECRET_KEY=dev-secret
+      - RABBIT_URL=amqp://guest:guest@rabbitmq:5672/
     expose:
       - "8001"
     depends_on:
@@ -162,6 +164,7 @@ services:
     depends_on: 
       - app
       - dialog-service
+      - counter-service
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
@@ -192,6 +195,23 @@ services:
       - db
       - db-replica1
       - db-replica2
+
+  counter-service:
+    build: ./counter-service
+    container_name: counter-service
+    restart: always
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RABBIT_URL=amqp://guest:guest@rabbitmq:5672/
+      - SECRET_KEY=dev-secret
+    expose:
+      - "8002"
+    depends_on:
+      - redis
+      - rabbitmq
+    networks:
+      - socialnetwork
 
 networks:
   socialnetwork:

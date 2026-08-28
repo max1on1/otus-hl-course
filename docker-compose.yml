@@ -153,7 +153,7 @@ services:
       - socialnetwork
 
   pgpool:
-    image: bitnami/pgpool:4
+    image: soldevelo/pgpool:4.6
     restart: always
     environment:
       PGPOOL_BACKEND_NODES: 0:db:5432,1:db-replica1:5432,2:db-replica2:5432
